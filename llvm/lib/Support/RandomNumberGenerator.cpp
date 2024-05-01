@@ -21,7 +21,9 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/raw_ostream.h"
-#ifdef _WIN32
+#ifdef __wasi__
+#include <string.h>
+#elif defined(_WIN32)
 #include "llvm/Support/Windows/WindowsSupport.h"
 #else
 #include "Unix/Unix.h"
@@ -68,10 +70,14 @@ RandomNumberGenerator::result_type RandomNumberGenerator::operator()() {
 
 // Get random vector of specified size
 std::error_code llvm::getRandomBytes(void *Buffer, size_t Size) {
-#ifdef _WIN32
+#ifdef __wasi__
+  // TODO(veluca): maybe use __wasi_random_get or something else.
+  memset(Buffer, 0, Size);
+  return std::error_code();
+#elif defined(_WIN32)
   HCRYPTPROV hProvider;
   if (CryptAcquireContext(&hProvider, 0, 0, PROV_RSA_FULL,
-                           CRYPT_VERIFYCONTEXT | CRYPT_SILENT)) {
+                          CRYPT_VERIFYCONTEXT | CRYPT_SILENT)) {
     ScopedCryptContext ScopedHandle(hProvider);
     if (CryptGenRandom(hProvider, Size, static_cast<BYTE *>(Buffer)))
       return std::error_code();

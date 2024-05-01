@@ -50,7 +50,9 @@
 #ifdef HAVE_BACKTRACE
 #include BACKTRACE_HEADER // For backtrace().
 #endif
+#ifndef __wasi__
 #include <signal.h>
+#endif
 #include <sys/stat.h>
 #include <dlfcn.h>
 #if HAVE_MACH_MACH_H
@@ -80,8 +82,10 @@
 
 using namespace llvm;
 
+#ifndef __wasi__
 static void SignalHandler(int Sig);     // defined below.
 static void InfoSignalHandler(int Sig); // defined below.
+#endif
 
 using SignalHandlerFunctionType = void (*)();
 /// The function to call if ctrl-c is pressed.
@@ -208,6 +212,7 @@ struct FilesToRemoveCleanup {
 
 static StringRef Argv0;
 
+#ifndef __wasi__
 /// Signals that represent requested termination. There's no bug or failure, or
 /// if there is, it's not our direct responsibility. For whatever reason, our
 /// continued execution is no longer desirable.
@@ -256,6 +261,7 @@ static struct {
   struct sigaction SA;
   int SigNo;
 } RegisteredSignalInfo[NumSigs];
+#endif
 
 #if defined(HAVE_SIGALTSTACK)
 // Hold onto both the old and new alternate signal stack so that it's not
@@ -285,10 +291,13 @@ static void CreateSigAltStack() {
     free(AltStack.ss_sp);
 }
 #else
+#ifndef __wasi__
 static void CreateSigAltStack() {}
+#endif
 #endif
 
 static void RegisterHandlers() { // Not signal-safe.
+#ifndef __wasi__
   // The mutex prevents other threads from registering handlers while we're
   // doing it. We also have to protect the handlers and their count because
   // a signal handler could fire while we're registering handlers.
@@ -337,15 +346,18 @@ static void RegisterHandlers() { // Not signal-safe.
     registerHandler(SIGPIPE, SignalKind::IsKill);
   for (auto S : InfoSigs)
     registerHandler(S, SignalKind::IsInfo);
+#endif
 }
 
 void sys::unregisterHandlers() {
+#ifndef __wasi__
   // Restore all of the signal handlers to how they were before we showed up.
   for (unsigned i = 0, e = NumRegisteredSignals.load(); i != e; ++i) {
     sigaction(RegisteredSignalInfo[i].SigNo, &RegisteredSignalInfo[i].SA,
               nullptr);
     --NumRegisteredSignals;
   }
+#endif
 }
 
 /// Process the FilesToRemove list.
@@ -354,6 +366,7 @@ static void RemoveFilesToRemove() {
 }
 
 void sys::CleanupOnSignal(uintptr_t Context) {
+#ifndef __wasi__
   int Sig = (int)Context;
 
   if (llvm::is_contained(InfoSigs, Sig)) {
@@ -367,8 +380,10 @@ void sys::CleanupOnSignal(uintptr_t Context) {
     return;
 
   llvm::sys::RunSignalHandlers();
+#endif
 }
 
+#ifndef __wasi__
 // The signal handler that runs.
 static void SignalHandler(int Sig) {
   // Restore the signal behavior to default, so that the program actually
@@ -419,6 +434,7 @@ static void InfoSignalHandler(int Sig) {
   if (SignalHandlerFunctionType CurrentInfoFunction = InfoSignalFunction)
     CurrentInfoFunction();
 }
+#endif
 
 void llvm::sys::RunInterruptHandlers() { RemoveFilesToRemove(); }
 
@@ -787,7 +803,7 @@ static void zosbacktrace(raw_ostream &OS) {
 // On glibc systems we have the 'backtrace' function, which works nicely, but
 // doesn't demangle symbols.
 void llvm::sys::PrintStackTrace(raw_ostream &OS, int Depth) {
-#if ENABLE_BACKTRACES
+#if ENABLE_BACKTRACES && !defined(__wasi__)
 #ifdef __MVS__
   zosbacktrace(OS);
 #else
