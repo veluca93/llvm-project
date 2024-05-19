@@ -41,7 +41,9 @@ InitLLVM::InitLLVM(int &Argc, const char **&Argv,
   assert(!Initialized && "InitLLVM was already initialized!");
   Initialized = true;
 #endif
+#if !defined(__wasi__)
 #ifdef __MVS__
+
   // Bring stdin/stdout/stderr into a known state.
   sys::AddSignalHandler(CleanupStdHandles, nullptr);
 #endif
@@ -57,6 +59,7 @@ InitLLVM::InitLLVM(int &Argc, const char **&Argv,
   StackPrinter.emplace(Argc, Argv);
   sys::PrintStackTraceOnErrorSignal(Argv[0]);
   install_out_of_memory_new_handler();
+#endif
 
 #ifdef __MVS__
 
