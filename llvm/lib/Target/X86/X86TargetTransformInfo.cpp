@@ -6321,6 +6321,11 @@ bool X86TTIImpl::areInlineCompatible(const Function *Caller,
   return true;
 }
 
+bool X86TTIImpl::inliningWouldCauseMiscompilation(const Function *Caller,
+                                                  const Function *Callee) const {
+  return !areInlineCompatible(Caller, Callee);
+}
+
 bool X86TTIImpl::areTypesABICompatible(const Function *Caller,
                                        const Function *Callee,
                                        const ArrayRef<Type *> &Types) const {

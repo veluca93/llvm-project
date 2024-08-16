@@ -1220,6 +1220,11 @@ bool TargetTransformInfo::areInlineCompatible(const Function *Caller,
   return TTIImpl->areInlineCompatible(Caller, Callee);
 }
 
+bool TargetTransformInfo::inliningWouldCauseMiscompilation(const Function *Caller,
+                                              const Function *Callee) const {
+  return TTIImpl->inliningWouldCauseMiscompilation(Caller, Callee);
+}
+
 unsigned
 TargetTransformInfo::getInlineCallPenalty(const Function *F,
                                           const CallBase &Call,

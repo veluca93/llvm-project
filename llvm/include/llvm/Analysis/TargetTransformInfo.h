@@ -1607,6 +1607,11 @@ public:
   bool areInlineCompatible(const Function *Caller,
                            const Function *Callee) const;
 
+  /// \returns True if inlining `Callee` into `Caller` would cause a
+  /// miscompilation.
+  bool inliningWouldCauseMiscompilation(const Function *Caller,
+                                        const Function *Callee) const;
+
   /// Returns a penalty for invoking call \p Call in \p F.
   /// For example, if a function F calls a function G, which in turn calls
   /// function H, then getInlineCallPenalty(F, H()) would return the
@@ -2143,6 +2148,8 @@ public:
       std::optional<uint32_t> AtomicCpySize) const = 0;
   virtual bool areInlineCompatible(const Function *Caller,
                                    const Function *Callee) const = 0;
+  virtual bool inliningWouldCauseMiscompilation(const Function *Caller,
+                                                const Function *Callee) const = 0;
   virtual unsigned getInlineCallPenalty(const Function *F, const CallBase &Call,
                                         unsigned DefaultCallPenalty) const = 0;
   virtual bool areTypesABICompatible(const Function *Caller,
@@ -2856,6 +2863,10 @@ public:
   bool areInlineCompatible(const Function *Caller,
                            const Function *Callee) const override {
     return Impl.areInlineCompatible(Caller, Callee);
+  }
+  bool inliningWouldCauseMiscompilation(const Function *Caller,
+                                        const Function *Callee) const override {
+    return Impl.inliningWouldCauseMiscompilation(Caller, Callee);
   }
   unsigned getInlineCallPenalty(const Function *F, const CallBase &Call,
                                 unsigned DefaultCallPenalty) const override {

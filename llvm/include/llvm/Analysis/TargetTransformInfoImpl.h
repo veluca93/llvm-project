@@ -864,6 +864,14 @@ public:
             Callee->getFnAttribute("target-features"));
   }
 
+  bool inliningWouldCauseMiscompilation(const Function *Caller,
+                                        const Function *Callee) const {
+    // Targets override this call if they can be sure that inlining a certain
+    // call would cause a miscompilation. By default, we assume that no
+    // miscompilation can happen to avoid preventing important optimizations.
+    return false;
+  }
+
   unsigned getInlineCallPenalty(const Function *F, const CallBase &Call,
                                 unsigned DefaultCallPenalty) const {
     return DefaultCallPenalty;

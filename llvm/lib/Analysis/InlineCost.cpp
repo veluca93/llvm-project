@@ -309,7 +309,7 @@ protected:
   virtual void onCallPenalty() {}
 
   /// Called to account for a load or store.
-  virtual void onMemAccess(){};
+  virtual void onMemAccess() {};
 
   /// Called to account for the expectation the inlining would result in a load
   /// elimination.
@@ -900,7 +900,8 @@ class InlineCostCallAnalyzer final : public CallAnalyzer {
             CurrentSavings += InstrCost;
           }
         } else if (SwitchInst *SI = dyn_cast<SwitchInst>(&I)) {
-          if (isa_and_present<ConstantInt>(SimplifiedValues.lookup(SI->getCondition())))
+          if (isa_and_present<ConstantInt>(
+                  SimplifiedValues.lookup(SI->getCondition())))
             CurrentSavings += InstrCost;
         } else if (Value *V = dyn_cast<Value>(&I)) {
           // Count an instruction as savings if we can fold it.
@@ -3006,6 +3007,12 @@ std::optional<InlineResult> llvm::getAttributeBasedInliningDecision(
                                      " address space");
     }
 
+  // Never inline functions if doing so would cause a miscompilation.
+  Function *Caller = Call.getCaller();
+  if (!IgnoreTTIInlineCompatible &&
+      CalleeTTI.inliningWouldCauseMiscompilation(Caller, Callee))
+    return InlineResult::failure("inlining would cause miscompilation");
+
   // Calls to functions with always-inline attributes should be inlined
   // whenever possible.
   if (Call.hasFnAttr(Attribute::AlwaysInline)) {
@@ -3020,7 +3027,6 @@ std::optional<InlineResult> llvm::getAttributeBasedInliningDecision(
 
   // Never inline functions with conflicting attributes (unless callee has
   // always-inline attribute).
-  Function *Caller = Call.getCaller();
   if (!functionsHaveCompatibleAttributes(Caller, Callee, CalleeTTI, GetTLI))
     return InlineResult::failure("conflicting attributes");
 
