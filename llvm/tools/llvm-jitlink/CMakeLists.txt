@@ -1,3 +1,4 @@
+if (NOT WASI)
 if ( LLVM_INCLUDE_UTILS )
   add_subdirectory(llvm-jitlink-executor)
 endif()
@@ -36,4 +37,5 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   target_link_libraries(llvm-jitlink PRIVATE socket)
+endif()
 endif()

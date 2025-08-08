@@ -1,3 +1,4 @@
+if (NOT WASI)
 if ( LLVM_INCLUDE_UTILS )
   add_subdirectory(ChildTarget)
 endif()
@@ -59,3 +60,4 @@ add_llvm_tool(lli
 
   EXPORT_SYMBOLS
   )
+endif()

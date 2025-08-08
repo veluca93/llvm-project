@@ -29,8 +29,10 @@
 #include "llvm/Support/SystemZ/zOSSupport.h"
 #include "llvm/Support/raw_ostream.h"
 #include <sys/stat.h>
+#ifndef __wasi__
 #include <sys/resource.h>
 #include <signal.h>
+#endif
 #include <fcntl.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -142,6 +144,7 @@ static bool RedirectIO_PS(const std::string *Path, int FD, std::string *ErrMsg,
 static void TimeOutHandler(int Sig) {}
 
 static void SetMemoryLimits(unsigned size) {
+#ifndef __wasi__
   struct rlimit r;
   __typeof__(r.rlim_cur) limit = (__typeof__(r.rlim_cur))(size)*1048576;
 
@@ -154,6 +157,7 @@ static void SetMemoryLimits(unsigned size) {
   getrlimit(RLIMIT_RSS, &r);
   r.rlim_cur = limit;
   setrlimit(RLIMIT_RSS, &r);
+#endif
 #endif
 }
 

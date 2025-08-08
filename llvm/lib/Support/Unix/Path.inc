@@ -840,6 +840,9 @@ std::error_code setLastAccessAndModificationTime(int FD, TimePoint<> AccessTime,
 
 std::error_code mapped_file_region::init(int FD, uint64_t Offset,
                                          mapmode Mode) {
+#ifdef __wasi__
+  return std::error_code();
+#else
   assert(Size != 0);
 
   int flags = (Mode == readwrite) ? MAP_SHARED : MAP_PRIVATE;
@@ -871,6 +874,7 @@ std::error_code mapped_file_region::init(int FD, uint64_t Offset,
   if (Mapping == MAP_FAILED)
     return errnoAsErrorCode();
   return std::error_code();
+#endif
 }
 
 mapped_file_region::mapped_file_region(int fd, mapmode mode, size_t length,
@@ -883,8 +887,10 @@ mapped_file_region::mapped_file_region(int fd, mapmode mode, size_t length,
 }
 
 void mapped_file_region::unmapImpl() {
+#ifndef __wasi__
   if (Mapping)
     ::munmap(Mapping, Size);
+#endif
 }
 
 void mapped_file_region::dontNeedImpl() {

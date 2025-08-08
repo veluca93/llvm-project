@@ -19,9 +19,11 @@
 #include <optional>
 #include <fcntl.h>
 #include <sys/time.h>
-#include <sys/resource.h>
 #include <sys/stat.h>
+#ifndef __wasi__
+#include <sys/resource.h>
 #include <signal.h>
+#endif
 #if defined(HAVE_MALLINFO) || defined(HAVE_MALLINFO2)
 #include <malloc.h>
 #endif
@@ -131,6 +133,7 @@ void Process::GetTimeUsage(TimePoint<> &elapsed,
 // their operation. To prevent the disk from filling up, this function
 // does what's necessary to prevent their generation.
 void Process::PreventCoreFiles() {
+#ifndef __wasi__
   struct rlimit rlim;
   getrlimit(RLIMIT_CORE, &rlim);
 #ifdef __linux__
@@ -180,6 +183,7 @@ void Process::PreventCoreFiles() {
   signal(SIGFPE, _exit);
   signal(SIGSEGV, _exit);
   signal(SIGBUS, _exit);
+#endif
 #endif
 
   coreFilesPrevented = true;

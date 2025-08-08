@@ -1,3 +1,4 @@
+if (NOT WASI)
 # Has side effect of defining LLVM_EXEGESIS_TARGETS
 add_subdirectory(lib)
 
@@ -37,3 +38,4 @@ target_link_libraries(llvm-exegesis PRIVATE
   LLVMExegesis
   ${libs}
   )
+endif()
